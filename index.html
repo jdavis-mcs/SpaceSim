@@ -40,6 +40,15 @@
             position: relative;
             overflow: hidden;
         }
+        /* New style for ship damage effect */
+        .damage-flash {
+            animation: flash-red 0.3s forwards;
+        }
+        @keyframes flash-red {
+            0% { box-shadow: 0 0 15px rgba(42, 157, 143, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 0, 0, 0.9); }
+            100% { box-shadow: 0 0 15px rgba(42, 157, 143, 0.5); }
+        }
         .slider-thumb {
             -webkit-appearance: none;
             appearance: none;
@@ -81,7 +90,7 @@
             <p class="text-base md:text-lg text-gray-300 mb-6">Load a mission file to begin.</p>
             <input type="file" id="mission-file-input" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-700 file:text-cyan-100 hover:file:bg-cyan-600 mb-4"/>
             <button id="engage-button" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-xl md:text-2xl transition-transform transform hover:scale-105" disabled>Engage</button>
-            <p class="text-gray">v1.2.1</p>
+            <p class="text-gray">v1.2.2</p>
             <p id="loading-error" class="text-red-400 mt-4"></p>
         </div>
     </div>
@@ -264,7 +273,9 @@
             updateTargetsUI();
             createStarfield();
             
+            // Start core game loops
             setInterval(regenerateShields, 2000);
+            setInterval(gameLoop, 3000); // Enemy AI loop
             
             processNextEvent();
         }
@@ -493,7 +504,24 @@
             commsLog.appendChild(choiceContainer);
             commsLog.scrollTop = commsLog.scrollHeight;
         }
+        
+        // --- Main Game Loop (Enemy AI) ---
+        function gameLoop() {
+            if (gameState.isPaused || gameState.enemies.length === 0) {
+                return;
+            }
 
+            gameState.enemies.forEach(enemy => {
+                // Give each enemy a 33% chance to fire every 3 seconds
+                if (Math.random() < 0.33) {
+                    addCommsLog('SYSTEM', `Incoming fire from ${enemy.name}!`);
+                    takeDamage(5); // All enemies do 5 damage for now
+                }
+            });
+        }
+
+
+        // --- Combat & Ship Systems ---
         function regenerateShields() {
             if (gameState.ship.shields < 100) {
                 const regenRate = 1 * (1 + (gameState.ship.powerEffects.shieldRegenBonus / 100));
@@ -508,6 +536,10 @@
                 addCommsLog('SYSTEM', 'Enemy fire evaded!');
                 return;
             }
+
+            // Visual flash effect on the viewscreen border
+            viewscreen.classList.add('damage-flash');
+            setTimeout(() => viewscreen.classList.remove('damage-flash'), 300);
 
             const damageToShields = Math.min(gameState.ship.shields, amount);
             gameState.ship.shields -= damageToShields;
