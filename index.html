@@ -331,7 +331,7 @@
         function playSoundEffect(name) {
             if (soundBank[name] && audioContext && audioContext.state === 'running') {
                 const source = audioContext.createBufferSource();
-                source.buffer = soundBank[name];
+                source.buffer = Bank[name];
                 source.connect(audioContext.destination);
                 source.start(0);
             }
@@ -465,9 +465,9 @@
             resetGameState();
             setupScreen.classList.add('hidden');
             bridgeUI.classList.remove('hidden');
-            loadSound('comms_beep', 'Sounds/ui_beep.wav');
-            loadSound('phaser_fire', 'Sounds/phaser_beam.wav');
-            loadSound('torpedo_launch', 'Sounds/torpedo_fire.mp3');
+            loadSound('comms_beep', 'Sounds/commsBeep.mp3');
+            loadSound('phaser_fire', 'Sounds/phasersBlast.mp3');
+            loadSound('torpedo_launch', 'Sounds/torpedoFire.mp3');
             updateAllPowerSliders([34, 33, 33]);
             updateAllUI();
             createStarfield();
