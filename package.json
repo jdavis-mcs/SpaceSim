@@ -1,0 +1,10 @@
+{
+  "name": "spaceship-bridge-simulator",
+  "version": "1.0.0",
+  "description": "A sci-fi bridge simulator for education.",
+  "main": "main.js",
+  "author": "Your Name or School Name",
+  "devDependencies": {
+    "electron": "^22.0.0" 
+  }
+}
