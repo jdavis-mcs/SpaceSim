@@ -65,6 +65,6 @@ The `events` list is where the magic happens. Each item is an object that descri
 
 ## Copyright and License
 
-© 2025 Justin Davis. All Rights Reserved.
+© 2025 Madison Consolidated Junior High. All Rights Reserved.
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. See the `LICENSE` file for more details.
