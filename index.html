@@ -10,494 +10,940 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --panel-border-color: #22d3ee;
-            --panel-glow-color: rgba(34, 211, 238, 0.3);
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-highlight: #67e8f9;
-            --alert-color: #f43f5e;
-            --alert-glow-color: rgba(244, 63, 94, 0.5);
+            --panel-bg: rgba(10, 20, 40, 0.8);
+            --border-color: #2a9d8f;
+            --text-cyan: #26c4da;
+            --text-light: #e0f2f1;
+            --disabled-bg: #4a5568;
+            --alert-red: #e53e3e;
         }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #020617;
-            color: var(--text-primary);
+            background-color: #000;
+            color: var(--text-light);
             overflow: hidden;
         }
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
-
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
         .simulator-container {
-            display: grid;
-            grid-template-rows: 60% auto;
-            gap: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            padding: 1rem;
+        }
+        .monitor {
+            background-color: #0a141c;
+            border: 4px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 0 30px rgba(42, 157, 143, 0.6);
             width: 100%;
             height: 100%;
             max-width: 1600px;
-            max-height: 900px;
             aspect-ratio: 16 / 9;
-            border: 2px solid var(--panel-border-color);
-            border-radius: 1rem;
-            padding: 1rem;
-            box-shadow: 0 0 30px var(--panel-glow-color);
-            background: #08152b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        .panels-grid {
+        .main-grid {
             display: grid;
-            grid-template-columns: repeat(1, 1fr);
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: 60% 40%;
+            grid-template-areas:
+                "viewscreen viewscreen viewscreen viewscreen"
+                "comms science engineering weapons";
+            gap: 0.5rem;
+            padding: 0.5rem;
+            flex-grow: 1;
             min-height: 0;
         }
-        @media (min-width: 768px) { .panels-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1280px) { .panels-grid { grid-template-columns: repeat(4, 1fr); } }
 
         .panel {
-            background-color: rgba(10, 20, 40, 0.8);
-            border: 1px solid var(--panel-border-color);
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             backdrop-filter: blur(5px);
             display: flex;
             flex-direction: column;
+            overflow: hidden;
             min-height: 0;
-            box-shadow: inset 0 0 8px rgba(34, 211, 238, 0.2);
         }
         .panel-header {
             font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            color: var(--text-highlight);
-            border-bottom: 2px solid var(--panel-border-color);
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            border-bottom: 2px solid var(--border-color);
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-cyan);
             flex-shrink: 0;
         }
         .panel-content {
             flex-grow: 1;
             overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--panel-border-color) #083344;
-            padding: 0 0.75rem 0.75rem;
+            padding: 0.5rem;
         }
-        .viewscreen {
-            background-color: #000;
-            border: 2px solid var(--panel-border-color);
-            border-radius: 8px;
-            position: relative;
-            overflow: hidden;
+        .panel-content::-webkit-scrollbar { width: 8px; }
+        .panel-content::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        .panel-content::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
+
+        .viewscreen { grid-area: viewscreen; position: relative; border-radius: 8px; overflow:hidden; border: 1px solid var(--border-color); }
+        #comms-panel { grid-area: comms; }
+        #science-panel { grid-area: science; }
+        #engineering-panel { grid-area: engineering; }
+        #weapons-panel { grid-area: weapons; }
+        
+        .progress-bar-container { width: 100%; height: 1.5rem; background-color: #1a202c; border-radius: 0.5rem; border: 1px solid var(--border-color); overflow: hidden; }
+        .progress-bar { height: 100%; color: black; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; transition: width 0.5s ease-in-out; }
+        .progress-bar-shields { background-color: #4299e1; }
+        .progress-bar-hull { background-color: #68d391; }
+
+        @keyframes flash-red {
+            0% { box-shadow: inset 0 0 0px rgba(255, 0, 0, 0); }
+            50% { box-shadow: inset 0 0 50px rgba(255, 0, 0, 0.9); }
+            100% { box-shadow: inset 0 0 0px rgba(255, 0, 0, 0); }
         }
-        .damage-flash { animation: flash-red 0.3s forwards; }
-        @keyframes flash-red { 50% { box-shadow: 0 0 40px var(--alert-color); } }
-        @keyframes twinkle { to { opacity: 0.2; } }
+        .player-ship { position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; z-index: 10; }
+        .enemy-ship { position: absolute; width: 30px; height: 30px; background-color: red; border-radius: 50%; box-shadow: 0 0 15px red; animation: pulse 2s infinite; cursor: pointer; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .star { position: absolute; background-color: white; border-radius: 50%; }
         
-        #hazard-warning {
-            animation: pulse-warning 2s infinite;
+        .comic-modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:1000}
+        .comic-container{width:90%;max-width:1200px;height:90%;background-color:#0a141c;border:2px solid var(--border-color);border-radius:1rem;padding:1rem;display:flex;flex-direction:column}
+        .comic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;overflow-y:auto;flex-grow:1;padding:1rem}
+        .comic-panel{background-color:#333;border:2px solid #555;border-radius:8px;aspect-ratio:4/3;display:flex;justify-content:center;align-items:center;overflow:hidden;position:relative}
+        .comic-panel img{width:100%;height:100%;object-fit:cover}
+        .comic-panel.locked .lock-icon{font-size:4rem;color:#ccc}
+        .comic-panel.locked::after{content:'LOCKED';position:absolute;bottom:10%;font-family:'Orbitron',sans-serif;color:#ccc;font-size:1.2rem}
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1200px) { /* Tablet Layout */
+            .main-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 50% 25% 25%;
+                grid-template-areas:
+                    "viewscreen viewscreen"
+                    "comms science"
+                    "engineering weapons";
+            }
         }
-        @keyframes pulse-warning { 50% { box-shadow: inset 0 0 40px var(--alert-glow-color), 0 0 40px var(--alert-glow-color); } }
-
-        .btn-danger { @apply bg-red-600 hover:bg-red-500 disabled:bg-red-800 border-red-400; box-shadow: 0 0 8px rgba(244, 63, 94, 0.5); }
-
-        .player-ship { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; filter: drop-shadow(0 0 5px var(--text-highlight)); }
-        .enemy-ship { position: absolute; width: 20px; height: 20px; background-color: #f43f5e; border-radius: 50%; box-shadow: 0 0 10px #f43f5e; transition: all 0.5s ease; animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse-red { 50% { opacity: 0.7; transform: scale(1.2); } }
-        
-        .btn { @apply px-4 py-2 rounded-md font-semibold text-white transition-all duration-200 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed; }
-        .btn-primary { @apply bg-cyan-500 hover:bg-cyan-400 disabled:bg-cyan-700; border: 1px solid var(--text-highlight); box-shadow: 0 0 8px rgba(103, 232, 249, 0.5); }
-        .btn-secondary { @apply bg-slate-600 hover:bg-slate-500 disabled:bg-slate-700; border: 1px solid var(--text-secondary); }
-        
-        .target-btn { @apply w-full text-left p-2 rounded-md transition-colors duration-200; }
-        .target-btn.selected { @apply bg-cyan-800 ring-2 ring-cyan-400; }
-        .target-btn:not(.selected):hover { @apply bg-slate-700; }
-
-        .slider-thumb::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: var(--text-highlight); cursor: pointer; border-radius: 50%; border: 2px solid #083344; margin-top: -8px; }
-        .slider-thumb::-moz-range-thumb { width: 20px; height: 20px; background: var(--text-highlight); cursor: pointer; border-radius: 50%; border: 2px solid #083344; }
+        @media (max-width: 768px) { /* Mobile Layout */
+             .simulator-container { padding: 0; height: 100svh; }
+             .monitor { border-radius: 0; border: none; }
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: 40vh repeat(4, auto);
+                grid-template-areas:
+                    "viewscreen"
+                    "comms"
+                    "weapons"
+                    "science"
+                    "engineering";
+            }
+            .panel { min-height: 200px; }
+        }
     </style>
 </head>
-<body class="bg-slate-950 flex items-center justify-center h-screen p-4">
+<body class="bg-black">
 
-    <div id="setup-screen" class="max-w-lg w-full">
-        <div class="panel p-8 text-center">
-            <h1 class="font-orbitron text-4xl mb-4 text-cyan-300">Bridge Simulator</h1>
-            <p class="mb-6 text-slate-400">Load a mission file to begin the simulation.</p>
-            <input type="file" id="mission-file-input" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-900 file:text-cyan-300 hover:file:bg-cyan-800 mb-4"/>
-            <p id="mission-status" class="text-sm text-yellow-400 h-5 mb-4"></p>
-            <button id="engage-btn" class="btn btn-primary w-full text-lg" disabled>Engage</button>
-            <p class="text-gray">v1.3</p>
+    <div class="simulator-container">
+        <div class="monitor">
+            <div id="setup-screen" class="flex flex-col items-center justify-center h-full p-8 text-center">
+                <h1 class="font-orbitron text-6xl md:text-8xl text-cyan-300 mb-4">Bridge Simulator</h1>
+                <p class="text-xl text-gray-400 mb-8 max-w-2xl">Load a mission file to begin. Complete story missions to unlock comic panels.</p>
+                <div class="flex flex-col sm:flex-row gap-4 items-center">
+                    <input type="file" id="mission-file-input" accept=".js" class="hidden"/>
+                    <label for="mission-file-input" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded cursor-pointer">Choose Mission</label>
+                    <button id="engage-btn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded cursor-not-allowed" disabled>Engage</button>
+                    <button id="view-comic-btn" class="bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded">View Comic</button>
+                </div>
+                <div id="mission-status" class="mt-6 text-lg text-cyan-400 h-8"></div>
+            </div>
+
+            <div id="bridge-ui" class="main-grid hidden">
+                <div id="viewscreen" class="viewscreen">
+                     <div id="starfield"></div>
+                     <svg class="player-ship" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="50,0 100,100 50,75 0,100" fill="#2a9d8f"/>
+                    </svg>
+                </div>
+                
+                <div id="comms-panel" class="panel">
+                    <h2 class="panel-header">Comms</h2>
+                    <div class="panel-content" id="comms-log"></div>
+                    <div id="objective-display" class="p-2 border-t border-cyan-400 font-bold text-yellow-400 text-center hidden"></div>
+                </div>
+
+                <div id="science-panel" class="panel">
+                    <h2 class="panel-header">Science</h2>
+                    <div class="panel-content relative" id="science-content">
+                         <div id="science-controls">
+                             <div id="science-idle-display" class="text-center p-4 text-gray-400">Select a target on the viewscreen to begin scanning.</div>
+                            <div id="scan-target-display" class="text-center p-4 hidden">
+                                <h3 class="font-orbitron text-lg text-cyan-400">Target: <span id="scan-target-name"></span></h3>
+                                <button id="scan-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded mt-4">Begin Scan</button>
+                                <div id="scan-progress" class="mt-2 text-lg"></div>
+                            </div>
+                            <div id="scan-results-display" class="p-2 hidden"></div>
+                            <div id="anomaly-display" class="text-center p-4 hidden"></div>
+                        </div>
+                        <div id="science-hazard-overlay" class="absolute inset-0 bg-red-900 bg-opacity-90 flex items-center justify-center hidden text-center p-4"></div>
+                    </div>
+                </div>
+
+                <div id="engineering-panel" class="panel">
+                    <h2 class="panel-header">Engineering</h2>
+                    <div class="panel-content" id="engineering-content">
+                        <div class="mb-2">
+                            <label class="flex justify-between font-orbitron text-sm"><span>Shields</span><span id="shields-val">34%</span></label>
+                            <input id="shields-slider" type="range" min="0" max="100" value="34" class="w-full">
+                            <div class="text-xs text-cyan-300 text-right" id="shields-bonus-text">(+0.0% Regen)</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="flex justify-between font-orbitron text-sm"><span>Engines</span><span id="engines-val">33%</span></label>
+                            <input id="engines-slider" type="range" min="0" max="100" value="33" class="w-full">
+                            <div class="text-xs text-cyan-300 text-right" id="engines-bonus-text">(0.0% Evasion)</div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="flex justify-between font-orbitron text-sm"><span>Weapons</span><span id="weapons-val">33%</span></label>
+                            <input id="weapons-slider" type="range" min="0" max="100" value="33" class="w-full">
+                            <div class="text-xs text-cyan-300 text-right" id="weapons-bonus-text">(-0.0% Cooldown)</div>
+                        </div>
+                        <div id="total-power-display" class="text-center font-orbitron text-base mt-2 border-t border-cyan-400 pt-2">Total Power: 100%</div>
+                        <div id="damage-control" class="mt-2"></div>
+                    </div>
+                </div>
+                
+                <div id="weapons-panel" class="panel">
+                    <h2 class="panel-header">Weapons & Status</h2>
+                    <div class="panel-content" id="weapons-content">
+                        <div class="space-y-2 mb-2">
+                             <div>
+                                <label class="font-orbitron text-sm">Shields</label>
+                                <div class="progress-bar-container">
+                                    <div id="shields-bar" class="progress-bar progress-bar-shields" style="width: 100%;">100%</div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="font-orbitron text-sm">Hull</label>
+                                <div class="progress-bar-container">
+                                    <div id="hull-bar" class="progress-bar progress-bar-hull" style="width: 100%;">100%</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col flex-grow mt-2 border-t border-cyan-400 pt-2">
+                             <h3 class="font-orbitron text-center">Targeting</h3>
+                             <div id="targets-list" class="flex-grow space-y-1 my-2 overflow-y-auto">
+                                 <p class="text-gray-400 text-center">No targets detected.</p>
+                             </div>
+                             <p id="torpedo-count" class="text-center font-bold">Torpedoes: 10</p>
+                             <div class="mt-2 flex gap-2">
+                                 <button id="fire-phasers-btn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded flex-1" disabled>Phasers</button>
+                                 <button id="fire-torpedoes-btn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded flex-1" disabled>Torpedoes</button>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="comic-viewer" class="comic-modal hidden">
+                <div class="comic-container">
+                    <div class="flex justify-between items-center mb-4">
+                        <h1 class="font-orbitron text-4xl text-cyan-300">Mission Chronicles</h1>
+                        <button id="close-comic-btn" class="bg-red-600 hover:bg-red-500 text-white font-bold py-1 px-3 rounded-full text-xl">&times;</button>
+                    </div>
+                    <div id="comic-grid" class="comic-grid"></div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <main id="bridge-ui" class="hidden simulator-container">
-        
-        <div id="viewscreen" class="viewscreen">
-             <div id="hazard-warning" class="hidden absolute inset-0 border-8 border-red-500 rounded-lg pointer-events-none">
-                <div class="absolute top-2 left-1/2 -translate-x-1/2 bg-red-600 px-4 py-1 rounded-md font-orbitron text-lg tracking-widest">HAZARD DETECTED</div>
-            </div>
-            <svg class="player-ship" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <g transform="scale(1.2) translate(0, -5)">
-                    <polygon points="50,0 100,100 50,75 0,100" fill="#22d3ee"/>
-                    <polygon points="50,15 85,90 50,70 15,90" fill="#083344"/>
-                </g>
-            </svg>
-        </div>
-
-        <div class="panels-grid">
-            
-            <div id="comms-panel" class="panel">
-                <h2 class="panel-header text-lg">Comms</h2>
-                <div id="objective-display" class="p-2 mb-2 bg-slate-900/50 rounded-md hidden"></div>
-                <div id="comms-log" class="panel-content space-y-3"></div>
-            </div>
-
-            <div class="panel">
-                <h2 class="panel-header text-lg">Science</h2>
-                <div id="science-content" class="panel-content flex flex-col justify-center items-center text-center">
-                    <p class="text-slate-400">Awaiting target for scan...</p>
-                </div>
-            </div>
-
-            <div class="panel">
-                <h2 class="panel-header text-lg">Engineering</h2>
-                <div id="engineering-alerts" class="p-2 space-y-2"></div>
-                <div class="panel-content space-y-4 pt-2">
-                    <div>
-                        <label for="shields-slider" class="flex justify-between text-sm"><span>Shields</span><span id="shields-power-value">34%</span></label>
-                        <input id="shields-slider" type="range" min="0" max="100" value="34" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
-                        <div id="shields-bonus-text" class="text-xs text-cyan-300 text-center h-4"></div>
-                    </div>
-                    <div>
-                        <label for="engines-slider" class="flex justify-between text-sm"><span>Engines</span><span id="engines-power-value">33%</span></label>
-                        <input id="engines-slider" type="range" min="0" max="100" value="33" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
-                        <div id="engines-bonus-text" class="text-xs text-cyan-300 text-center h-4"></div>
-                    </div>
-                    <div>
-                        <label for="weapons-slider" class="flex justify-between text-sm"><span>Weapons</span><span id="weapons-power-value">33%</span></label>
-                        <input id="weapons-slider" type="range" min="0" max="100" value="33" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer slider-thumb">
-                         <div id="weapons-bonus-text" class="text-xs text-cyan-300 text-center h-4"></div>
-                    </div>
-                     <div class="!mt-auto">
-                        <h3 class="font-orbitron text-md text-center">Ship Status</h3>
-                         <div class="space-y-2 text-sm mt-2">
-                            <div class="flex justify-between"><span>Hull:</span> <span id="hull-status">100%</span></div>
-                            <div class="w-full bg-slate-700 rounded-full h-2.5"><div id="hull-bar" class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div></div>
-                            <div class="flex justify-between"><span>Shields:</span> <span id="shields-status">100%</span></div>
-                            <div class="w-full bg-slate-700 rounded-full h-2.5"><div id="shields-bar" class="bg-cyan-400 h-2.5 rounded-full" style="width: 100%"></div></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="weapons-panel" class="panel">
-                <h2 class="panel-header text-lg">Weapons Control</h2>
-                <div class="panel-content flex flex-col h-full min-h-0">
-                    <div class="flex-shrink-0 mb-2">
-                        <p class="text-sm font-semibold mb-1">Targets:</p>
-                        <div id="targets-list" class="flex-grow border border-slate-600 rounded-md p-1 space-y-1 overflow-y-auto">
-                             <p class="text-slate-400 text-center p-2">No targets detected.</p>
-                        </div>
-                    </div>
-                    <div class="flex-shrink-0 grid grid-cols-2 gap-2 mt-2">
-                        <button id="fire-phasers-btn" class="btn btn-primary h-16">Fire Phasers</button>
-                        <button id="fire-torpedoes-btn" class="btn btn-primary h-16">Fire Torpedoes (<span id="torpedo-count">5</span>)</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-    
     <script>
+        // DOM Elements
         const setupScreen = document.getElementById('setup-screen');
+        const bridgeUI = document.getElementById('bridge-ui');
         const missionFileInput = document.getElementById('mission-file-input');
         const engageBtn = document.getElementById('engage-btn');
-        const bridgeUI = document.getElementById('bridge-ui');
-        const viewscreen = document.getElementById('viewscreen');
+        const missionStatus = document.getElementById('mission-status');
+
         const commsLog = document.getElementById('comms-log');
-        const hullStatus = document.getElementById('hull-status');
-        const hullBar = document.getElementById('hull-bar');
-        const shieldsStatus = document.getElementById('shields-status');
-        const shieldsBar = document.getElementById('shields-bar');
-        const scienceContent = document.getElementById('science-content');
-        const targetsList = document.getElementById('targets-list');
+        const viewscreen = document.getElementById('viewscreen');
         const firePhasersBtn = document.getElementById('fire-phasers-btn');
         const fireTorpedoesBtn = document.getElementById('fire-torpedoes-btn');
-        const torpedoCountSpan = document.getElementById('torpedo-count');
+        const targetsList = document.getElementById('targets-list');
+
         const shieldsSlider = document.getElementById('shields-slider');
         const enginesSlider = document.getElementById('engines-slider');
         const weaponsSlider = document.getElementById('weapons-slider');
-        const missionStatus = document.getElementById('mission-status');
+        
+        const scienceContent = document.getElementById('science-content');
+        const scienceControls = document.getElementById('science-controls');
+        const scienceHazardOverlay = document.getElementById('science-hazard-overlay');
+        const scienceIdleDisplay = document.getElementById('science-idle-display');
+        const scanTargetDisplay = document.getElementById('scan-target-display');
+        const scanTargetName = document.getElementById('scan-target-name');
+        const scanBtn = document.getElementById('scan-btn');
+        const scanProgress = document.getElementById('scan-progress');
+        const scanResultsDisplay = document.getElementById('scan-results-display');
+        const anomalyDisplay = document.getElementById('anomaly-display');
+
         const objectiveDisplay = document.getElementById('objective-display');
-        const engineeringAlerts = document.getElementById('engineering-alerts');
-        const hazardWarning = document.getElementById('hazard-warning');
+        const damageControl = document.getElementById('damage-control');
 
-        let missionScript = null;
+        const comicViewer = document.getElementById('comic-viewer');
+        const viewComicBtn = document.getElementById('view-comic-btn');
+        const closeComicBtn = document.getElementById('close-comic-btn');
+        const comicGrid = document.getElementById('comic-grid');
+
+        // Game State
         let gameState = {};
-        let activeSounds = {}; // To manage looping sounds
+        let missionScript = null;
+        let isAdjustingPower = false;
+        
+        // --- UNIFIED SOUND ENGINE ---
+        let audioContext;
+        const soundBank = {};
+        let currentMusic = null;
 
-        // --- Sound Engine ---
-        function playSound(src, loop = false) {
-            // Don't play if a looping sound with the same src is already active
-            if (loop && activeSounds[src]) {
-                return;
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+        
+        async function loadSound(name, url) {
+            if (!audioContext) initAudio();
+            try {
+                const response = await fetch(url);
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                soundBank[name] = audioBuffer;
+            } catch (error) {
+                console.error(`Failed to load sound: ${name} from ${url}`, error);
+            }
+        }
+
+        function playSoundEffect(name) {
+            if (soundBank[name] && audioContext && audioContext.state === 'running') {
+                const source = audioContext.createBufferSource();
+                source.buffer = soundBank[name];
+                source.connect(audioContext.destination);
+                source.start(0);
+            }
+        }
+
+        function playMusic(src, loop = true) {
+            initAudio();
+            if (currentMusic) {
+                currentMusic.audio.pause();
+                currentMusic = null;
             }
             const audio = new Audio(src);
+            audio.crossOrigin = "anonymous";
             audio.loop = loop;
-            // User interaction is required for audio to play in most browsers.
-            // We'll rely on the initial "Engage" click to allow audio.
-            audio.play().catch(e => {
-                // This error often happens if the user hasn't interacted with the page yet.
-                console.warn(`Could not play sound: ${src}. User interaction may be required.`, e);
+            const source = audioContext.createMediaElementSource(audio);
+            source.connect(audioContext.destination);
+            audio.play().catch(e => console.error(`Music playback failed for ${src}:`, e));
+            currentMusic = { audio, source, src };
+        }
+
+        function stopMusic(src) {
+            if (currentMusic && currentMusic.src === src) {
+                currentMusic.audio.pause();
+                currentMusic = null;
+            }
+        }
+
+        // --- Comic Book Logic ---
+        const comicPanels = [
+             { id: "crystalline_mission_1_complete", title: "The Crystalline Anomaly", imgSrc: "https://placehold.co/800x600/0a141c/26c4da?text=Chapter+1" },
+             { id: "crystalline_mission_2_complete", title: "The Hunt", imgSrc: "https://placehold.co/800x600/0a141c/26c4da?text=Chapter+2" },
+        ];
+        let unlockedComics = new Set(JSON.parse(localStorage.getItem('unlockedComics')) || []);
+
+        function unlockComic(comicId) {
+            if (!comicId) return;
+            unlockedComics.add(comicId);
+            localStorage.setItem('unlockedComics', JSON.stringify(Array.from(unlockedComics)));
+        }
+
+        function renderComicViewer() {
+            comicGrid.innerHTML = '';
+            comicPanels.forEach(panel => {
+                const panelEl = document.createElement('div');
+                panelEl.className = 'comic-panel';
+                if (unlockedComics.has(panel.id)) {
+                    panelEl.innerHTML = `<img src="${panel.imgSrc}" alt="${panel.title}">`;
+                } else {
+                    panelEl.classList.add('locked');
+                    panelEl.innerHTML = `<div class="lock-icon">🔒</div>`;
+                }
+                comicGrid.appendChild(panelEl);
             });
-            if (loop) {
-                activeSounds[src] = audio;
-            }
-        }
-
-        function stopSound(src) {
-            if (activeSounds[src]) {
-                activeSounds[src].pause();
-                activeSounds[src].currentTime = 0;
-                delete activeSounds[src];
-            }
         }
         
-        function stopAllSounds() {
-            for (const src in activeSounds) {
-                stopSound(src);
-            }
-        }
+        viewComicBtn.addEventListener('click', () => {
+            renderComicViewer();
+            comicViewer.classList.remove('hidden');
+        });
+        closeComicBtn.addEventListener('click', () => {
+            comicViewer.classList.add('hidden');
+        });
 
-        function resetGameState() {
-            // ... (rest of the function is the same)
-            gameState = {
-                ship: {
-                    hull: 100,
-                    shields: 100,
-                    power: { shields: 34, engines: 33, weapons: 33 },
-                    powerEffects: { shieldRegenBonus: 0, evasionChance: 0, weaponCooldownReduction: 0 },
-                    systems: { shields: 'operational', engines: 'operational', weapons: 'operational' },
-                    weapons: {
-                        phasers: { name: 'Phasers', cooldown: 2000, ready: true },
-                        torpedoes: { name: 'Torpedoes', cooldown: 8000, ready: true, count: 5 }
-                    },
-                    targetId: null,
-                },
-                enemies: [],
-                eventIndex: 0,
-                isPaused: false,
-                missionVariables: {},
-                currentObjective: null,
-                currentHazard: null,
-            };
-        }
-        
+        // --- Mission Loading ---
         missionFileInput.addEventListener('change', (event) => {
-            // ... (rest of the function is the same)
-            const file = event.target.files[0]; if (!file) return;
-            engageBtn.disabled = true; missionStatus.textContent = "Loading mission...";
+            const file = event.target.files[0];
+            if (!file) return;
+
+            missionStatus.textContent = `Loading ${file.name}...`;
             const reader = new FileReader();
             reader.onload = (e) => {
-                try {
-                    const content = e.target.result;
-                    const missionString = content.substring(content.indexOf('{'));
-                    const missionObj = (new Function(`return ${missionString}`))();
-                    if (missionObj && missionObj.title && missionObj.events) {
-                        missionScript = missionObj;
+                const oldScript = document.getElementById('mission-script-tag');
+                if (oldScript) oldScript.remove();
+                const script = document.createElement('script');
+                script.id = 'mission-script-tag';
+                script.textContent = e.target.result;
+                document.body.appendChild(script);
+                setTimeout(() => {
+                    if (window.currentLoadedMission) {
+                        missionScript = window.currentLoadedMission;
                         engageBtn.disabled = false;
+                        engageBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                        engageBtn.classList.add('bg-green-600', 'hover:bg-green-500');
                         missionStatus.textContent = `Mission "${missionScript.title}" loaded.`;
-                    } else { throw new Error("Invalid mission structure."); }
-                } catch (error) {
-                    console.error("Error parsing mission file:", error);
-                    missionStatus.textContent = "Error: Failed to parse mission file.";
-                    missionScript = null;
-                }
+                        window.currentLoadedMission = null;
+                    } else {
+                        missionStatus.textContent = 'Error: Mission file is invalid or malformed.';
+                        engageBtn.disabled = true;
+                        engageBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
+                        engageBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                    }
+                }, 100);
             };
             reader.readAsText(file);
         });
 
-        engageBtn.addEventListener('click', () => { if (missionScript) { startGame(); } });
+        function resetGameState() {
+            gameState = {
+                ship: {
+                    shields: 100, hull: 100,
+                    power: { shields: 34, engines: 33, weapons: 33 },
+                    powerEffects: { shieldRegenBonus: 0, evasionChance: 0, weaponCooldownReduction: 0 },
+                    weapons: {
+                        phasers: { ready: true, cooldown: 2000 },
+                        torpedoes: { ready: true, cooldown: 8000, count: 10 }
+                    },
+                    targetId: null, damagedSystems: new Set(),
+                },
+                enemies: [], eventIndex: 0, isPaused: false,
+                missionVariables: new Map(), activeHazards: new Map(),
+            };
+            commsLog.innerHTML = '';
+            viewscreen.querySelectorAll('.enemy-ship, .star').forEach(el => el.remove());
+            objectiveDisplay.classList.add('hidden');
+            scienceIdleDisplay.classList.remove('hidden');
+            scanTargetDisplay.classList.add('hidden');
+            scanResultsDisplay.classList.add('hidden');
+            anomalyDisplay.classList.add('hidden');
+            scienceHazardOverlay.classList.add('hidden');
+            targetsList.innerHTML = '<p class="text-gray-400 text-center">No targets detected.</p>';
+        }
+
+        engageBtn.addEventListener('click', () => {
+            if (missionScript) {
+                initAudio();
+                startGame();
+            }
+        });
 
         function startGame() {
-            // ... (rest of the function is the same)
             resetGameState();
             setupScreen.classList.add('hidden');
-            bridgeUI.classList.remove('hidden'); bridgeUI.classList.add('grid');
-            updatePowerUI(); updateShipStatusUI(); updateTargetsUI(); createStarfield();
+            bridgeUI.classList.remove('hidden');
+            loadSound('comms_beep', 'Sounds/ui_beep.wav');
+            loadSound('phaser_fire', 'Sounds/phaser_beam.wav');
+            loadSound('torpedo_launch', 'Sounds/torpedo_fire.mp3');
+            updateAllPowerSliders([34, 33, 33]);
+            updateAllUI();
+            createStarfield();
             setInterval(regenerateShields, 2000);
             setInterval(gameLoop, 3000);
+            addCommsLog('SYSTEM', `Mission Started: ${missionScript.title}`);
             processNextEvent();
         }
 
         function processNextEvent() {
             if (gameState.isPaused || gameState.eventIndex >= missionScript.events.length) return;
-            const event = missionScript.events[gameState.eventIndex]; let advance = true;
+            const event = missionScript.events[gameState.eventIndex];
+            let advance = true;
+
             switch (event.type) {
                 case 'dialogue': addCommsLog(event.speaker, event.message); break;
-                // ... (other cases are the same)
-                case 'sound':
-                    playSound(event.src, event.loop || false);
-                    break;
-                case 'stop_sound':
-                    stopSound(event.src);
-                    break;
-                case 'wait':
-                    gameState.isPaused = true;
-                    setTimeout(() => {
-                        gameState.isPaused = false; gameState.eventIndex++; processNextEvent();
-                    }, event.duration);
-                    advance = false;
-                    break;
-                case 'spawn_enemy':
-                    const newEnemy = { id: `enemy_${Date.now()}_${Math.random()}`, name: event.name, hull: event.hull, weakness: event.weakness, isScanned: false };
-                    gameState.enemies.push(newEnemy); spawnEnemyOnViewscreen(newEnemy); updateTargetsUI();
-                    break;
-                case 'choice': gameState.isPaused = true; displayChoice(event); advance = false; break;
-                case 'label': break;
+                case 'sound': playMusic(event.src, event.loop); break;
+                case 'stop_sound': stopMusic(event.src); break;
                 case 'jump':
                     let doJump = true;
                     if (event.condition) {
                         switch (event.condition.type) {
                             case 'enemies_exist': doJump = gameState.enemies.length > 0; break;
-                            case 'variable_not_set': doJump = !gameState.missionVariables[event.condition.variable]; break;
+                            case 'variable_not_set': doJump = !gameState.missionVariables.has(event.condition.variable); break;
+                            default: doJump = false; break;
                         }
                     }
                     if (doJump) {
                         const targetIndex = missionScript.events.findIndex(e => e.type === 'label' && e.name === event.target);
-                        if (targetIndex !== -1) { gameState.eventIndex = targetIndex; }
+                        if (targetIndex !== -1) gameState.eventIndex = targetIndex - 1;
                     }
-                    break;
-                case 'anomaly': gameState.isPaused = true; addCommsLog('SCIENCE', `Unusual signature detected: ${event.name}.`); displayAnomaly(event); advance = false; break;
-                case 'system_damage':
-                    playSound('placeholder/system_alert.mp3');
-                    gameState.ship.systems[event.system] = 'damaged';
-                    addCommsLog('ENGINEERING', `CRITICAL: ${event.system.toUpperCase()} system damaged!`);
-                    updateEngineeringUI();
-                    break;
-                case 'set_objective':
-                    gameState.currentObjective = event.message;
-                    updateObjectiveUI();
-                    break;
-                case 'clear_objective':
-                    gameState.currentObjective = null;
-                    updateObjectiveUI();
-                    break;
-                case 'environmental_hazard':
-                    gameState.currentHazard = { type: event.hazard_type, durationLeft: event.duration };
-                    addCommsLog('SCIENCE', `Warning: Entering ${event.message}.`);
-                    updateHazardUI();
                     break;
                 case 'end_mission':
-                    stopAllSounds();
-                    bridgeUI.className = "flex items-center justify-center p-4";
-                    bridgeUI.innerHTML = `<div class="panel p-8 text-center max-w-lg"><h1 class="font-orbitron text-5xl text-cyan-300 mb-4">${event.title}</h1><p class="text-xl text-slate-300">${event.message}</p></div>`;
+                    unlockComic(missionScript.comicUnlock);
+                    const monitor = document.querySelector('.monitor');
+                    monitor.innerHTML = `<div class="flex flex-col items-center justify-center h-full p-8 text-center">
+                        <h1 class="font-orbitron text-5xl text-cyan-300 mb-4">${event.title}</h1>
+                        <p class="text-xl text-gray-300">${event.message}</p>
+                        <button onclick="location.reload()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded mt-8 text-lg">Return to Main Screen</button>
+                    </div>`;
                     advance = false;
                     break;
+                 case 'wait': gameState.isPaused=true; setTimeout(()=>{gameState.isPaused=false; gameState.eventIndex++; processNextEvent();},event.duration); advance=false; break;
+                 case 'spawn_enemy': spawnEnemy(event.name,event.hull,event.weakness); break;
+                 case 'choice': presentChoice(event); advance=false; break;
+                 case 'label': break;
+                 case 'anomaly': gameState.isPaused=true; addCommsLog('SCIENCE',`Anomaly detected: ${event.name}.`); renderAnomaly(event); advance=false; break;
+                 case 'set_objective': objectiveDisplay.textContent=`OBJECTIVE: ${event.message}`; objectiveDisplay.classList.remove('hidden'); break;
+                 case 'clear_objective': objectiveDisplay.classList.add('hidden'); break;
+                 case 'system_damage': damageSystem(event.system,event.message); break;
+                 case 'environmental_hazard': startHazard(event); break;
             }
-            if (advance) { gameState.eventIndex++; processNextEvent(); }
-        }
-        
-        function gameLoop() {
-            if (gameState.isPaused) return;
-            if(gameState.enemies.length > 0) {
-                gameState.enemies.forEach(enemy => {
-                    if (Math.random() < 0.33) {
-                        addCommsLog('SYSTEM', `Incoming fire from ${enemy.name}!`); takeDamage(5);
-                    }
-                });
-            }
-            if(gameState.currentHazard) {
-                gameState.currentHazard.durationLeft -= 3000;
-                if(gameState.currentHazard.type === 'asteroid_field' && gameState.ship.shields < 50) {
-                    addCommsLog('SYSTEM', 'Hull impacted by asteroid debris!'); takeDamage(3);
-                }
-                if(gameState.currentHazard.durationLeft <= 0) {
-                    addCommsLog('SCIENCE', `Hazardous area cleared.`);
-                    gameState.currentHazard = null;
-                    updateHazardUI();
-                }
-            }
-        }
 
-        function takeDamage(amount) {
-            playSound('placeholder/shield_hit.mp3');
-            let evasion = gameState.ship.systems.engines === 'operational' ? gameState.ship.powerEffects.evasionChance : 0;
-            if (Math.random() * 100 < evasion) { addCommsLog('SYSTEM', 'Enemy fire evaded!'); return; }
-            viewscreen.classList.add('damage-flash');
-            setTimeout(() => viewscreen.classList.remove('damage-flash'), 300);
-            const damageToShields = Math.min(gameState.ship.shields, amount);
-            gameState.ship.shields -= damageToShields;
-            const remainingDamage = amount - damageToShields;
-            if (remainingDamage > 0) gameState.ship.hull -= remainingDamage;
-            updateShipStatusUI();
-            if (gameState.ship.hull <= 0) {
-                stopAllSounds();
-                playSound('placeholder/ship_explosion.mp3');
-                bridgeUI.innerHTML = `<div class="panel p-8 text-center max-w-lg"><h1 class="text-5xl font-bold text-red-500 mb-4">Ship Destroyed</h1><p class="text-xl text-gray-300">Mission failed.</p></div>`;
-                bridgeUI.className = "flex items-center justify-center p-4";
+            if (advance) {
+                gameState.eventIndex++;
+                processNextEvent();
             }
         }
-        
-        function regenerateShields() { /* ... No sound needed here ... */ }
         
         function addCommsLog(speaker, message) {
-            playSound('placeholder/comms_alert.mp3');
             const logEntry = document.createElement('div');
-            logEntry.innerHTML = `<span class="font-bold text-cyan-300">${speaker}: </span><span>${message}</span>`;
-            commsLog.appendChild(logEntry); commsLog.scrollTop = commsLog.scrollHeight;
+            logEntry.innerHTML = `<p><strong class="text-cyan-400">${speaker}:</strong> ${message}</p>`;
+            commsLog.appendChild(logEntry);
+            commsLog.scrollTop = commsLog.scrollHeight;
+            playSoundEffect('comms_beep');
         }
-
-        function updateShipStatusUI() { /* ... No changes ... */ }
-        function updateTargetsUI() { /* ... No changes ... */ }
-        function updateScienceUI() { /* ... No changes ... */ }
-        function updateEngineeringUI() { /* ... No changes ... */ }
-        function updateObjectiveUI() { /* ... No changes ... */ }
-        function updateHazardUI() { /* ... No changes ... */ }
 
         firePhasersBtn.addEventListener('click', () => {
+            if (firePhasersBtn.disabled) return;
+            playSoundEffect('phaser_fire');
             const target = gameState.enemies.find(e => e.id === gameState.ship.targetId);
             if (target) {
-                playSound('placeholder/phaser_fire.mp3');
-                let damage = 2.5; if (target.isScanned && target.weakness === 'phasers') damage *= 2;
+                let damage = 10;
+                if (target.isScanned && target.weakness === 'phasers') damage *= 2;
                 target.hull = Math.max(0, target.hull - damage);
-                addCommsLog('WEAPONS', `Phasers fired at ${target.name}.`);
-                document.getElementById(target.id)?.animate([{ opacity: 0.5 }, { opacity: 1 }], { duration: 200, iterations: 2 });
-                handleWeaponCooldown(firePhasersBtn, gameState.ship.weapons.phasers, 'Fire Phasers');
-                checkEnemyDefeat(target);
-            }
-        });
-
-        fireTorpedoesBtn.addEventListener('click', () => {
-            const target = gameState.enemies.find(e => e.id === gameState.ship.targetId);
-            if (target) {
-                playSound('placeholder/torpedo_launch.mp3');
-                let damage = 20; if (target.isScanned && target.weakness === 'torpedoes') damage *= 2;
-                target.hull = Math.max(0, target.hull - damage);
-                gameState.ship.weapons.torpedoes.count--; addCommsLog('WEAPONS', `Torpedo launched at ${target.name}.`);
-                handleWeaponCooldown(fireTorpedoesBtn, gameState.ship.weapons.torpedoes, `Fire Torpedoes (${gameState.ship.weapons.torpedoes.count})`);
+                handleWeaponCooldown(firePhasersBtn, gameState.ship.weapons.phasers, "Phasers");
+                updateAllUI();
                 checkEnemyDefeat(target);
             }
         });
         
-        function handleWeaponCooldown(button, weapon, originalText) { /* ... No changes ... */ }
-
-        function checkEnemyDefeat(enemy) {
-            updateScienceUI();
-            if (enemy.hull <= 0) {
-                playSound('placeholder/enemy_explosion.mp3');
-                addCommsLog('SYSTEM', `${enemy.name} has been destroyed.`);
-                gameState.enemies = gameState.enemies.filter(e => e.id !== enemy.id);
-                if (gameState.ship.targetId === enemy.id) gameState.ship.targetId = null;
-                document.getElementById(enemy.id)?.remove();
-                updateTargetsUI(); updateScienceUI();
+        fireTorpedoesBtn.addEventListener('click', () => {
+             if (fireTorpedoesBtn.disabled) return;
+             playSoundEffect('torpedo_launch');
+            const target = gameState.enemies.find(e => e.id === gameState.ship.targetId);
+            if (target) {
+                let damage = 35;
+                if (target.isScanned && target.weakness === 'torpedoes') damage *= 2;
+                target.hull = Math.max(0, target.hull - damage);
+                gameState.ship.weapons.torpedoes.count--;
+                handleWeaponCooldown(fireTorpedoesBtn, gameState.ship.weapons.torpedoes, "Torpedoes");
+                updateAllUI();
+                checkEnemyDefeat(target);
             }
+        });
+        
+        function updateAllPowerSliders(values) {
+            isAdjustingPower = true;
+            const [shields, engines, weapons] = values;
+            shieldsSlider.value = shields;
+            enginesSlider.value = engines;
+            weaponsSlider.value = weapons;
+            gameState.ship.power = { shields, engines, weapons };
+            document.getElementById('shields-val').textContent = `${shields}%`;
+            document.getElementById('engines-val').textContent = `${engines}%`;
+            document.getElementById('weapons-val').textContent = `${weapons}%`;
+            gameState.ship.powerEffects.shieldRegenBonus = (shields > 50) ? (shields - 50) * 2 : 0;
+            document.getElementById('shields-bonus-text').textContent = `(+${gameState.ship.powerEffects.shieldRegenBonus.toFixed(1)}% Regen)`;
+            gameState.ship.powerEffects.evasionChance = (engines > 50) ? (engines - 50) * 0.5 : 0;
+            document.getElementById('engines-bonus-text').textContent = `(${gameState.ship.powerEffects.evasionChance.toFixed(1)}% Evasion)`;
+            gameState.ship.powerEffects.weaponCooldownReduction = (weapons > 50) ? (weapons - 50) * 0.5 : 0;
+            document.getElementById('weapons-bonus-text').textContent = `(-${gameState.ship.powerEffects.weaponCooldownReduction.toFixed(1)}% Cooldown)`;
+            document.getElementById('total-power-display').textContent = `Total Power: ${shields + engines + weapons}%`;
+            updateAllUI();
+            setTimeout(() => { isAdjustingPower = false; }, 50);
+        }
+
+        // **REPAIRED AND REBUILT POWER MANAGEMENT LOGIC**
+        function handlePowerChange(changedSlider) {
+            if (isAdjustingPower) return;
+            isAdjustingPower = true;
+
+            const sliders = {
+                shields: shieldsSlider,
+                engines: enginesSlider,
+                weapons: weaponsSlider
+            };
+            const values = {
+                shields: parseInt(shieldsSlider.value),
+                engines: parseInt(enginesSlider.value),
+                weapons: parseInt(weaponsSlider.value)
+            };
+
+            const changedKey = changedSlider.id.split('-')[0];
+            const otherKeys = Object.keys(sliders).filter(k => k !== changedKey);
+            
+            const total = values.shields + values.engines + values.weapons;
+            let diff = total - 100;
+
+            // Distribute the difference across the other two sliders
+            const otherSlider1 = otherKeys[0];
+            const otherSlider2 = otherKeys[1];
+
+            let val1 = values[otherSlider1];
+            let val2 = values[otherSlider2];
+
+            // Take power from the slider with more power first
+            if (val1 > val2) {
+                const take1 = Math.min(val1, diff);
+                val1 -= take1;
+                diff -= take1;
+            } else {
+                 const take2 = Math.min(val2, diff);
+                val2 -= take2;
+                diff -= take2;
+            }
+            // Take any remaining from the other slider
+            const take_rem_1 = Math.min(val1, diff);
+            val1 -= take_rem_1;
+            diff -= take_rem_1;
+            
+            const take_rem_2 = Math.min(val2, diff);
+            val2 -= take_rem_2;
+            diff -= take_rem_2;
+            
+            values[otherSlider1] = val1;
+            values[otherSlider2] = val2;
+
+            // Final check to ensure total is exactly 100
+            const finalTotal = values.shields + values.engines + values.weapons;
+            if (finalTotal !== 100) {
+                values[changedKey] += (100 - finalTotal);
+            }
+
+            updateAllPowerSliders([values.shields, values.engines, values.weapons]);
+            
+            // Release the lock
+            setTimeout(() => { isAdjustingPower = false; }, 20); 
+        }
+
+        [shieldsSlider, enginesSlider, weaponsSlider].forEach(slider => {
+            slider.addEventListener('input', () => handlePowerChange(slider));
+        });
+
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            if (!starfield) return;
+            starfield.innerHTML = '';
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 2 + 1;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.dataset.speed = Math.random() * 0.5 + 0.1;
+                starfield.appendChild(star);
+            }
+            animateStarfield();
+        }
+
+        function animateStarfield() {
+            const stars = document.querySelectorAll('#starfield .star');
+            stars.forEach(star => {
+                let top = parseFloat(star.style.top);
+                top += parseFloat(star.dataset.speed);
+                if (top > 100) top = 0;
+                star.style.top = `${top}%`;
+            });
+            requestAnimationFrame(animateStarfield);
         }
         
-        // --- Power Management, Visuals, and other helpers ---
-        [shieldsSlider, enginesSlider, weaponsSlider].forEach(slider => { /* ... No changes ... */ });
-        function distributePower(changedSlider) { /* ... Omitted for brevity ... */ }
-        function updatePowerUI() { /* ... Omitted for brevity ... */ }
-        function createStarfield() { /* ... Omitted for brevity ... */ }
-        function spawnEnemyOnViewscreen(enemy) { /* ... Omitted for brevity ... */ }
-        function displayChoice(event) { /* ... Omitted for brevity ... */ }
-        function scanTarget(target) { /* ... Omitted for brevity ... */ }
-        function analyzeAnomaly(event) { /* ... Omitted for brevity ... */ }
-        function displayAnomaly(event) { /* ... Omitted for brevity ... */ }
+        function updateAllUI() { updateShipStatusUI(); updateScienceUI(); updateTargetsUI(); }
+        
+        function updateShipStatusUI(){
+            document.getElementById('shields-bar').style.width=`${gameState.ship.shields}%`;
+            document.getElementById('shields-bar').textContent=`${Math.round(gameState.ship.shields)}%`;
+            document.getElementById('hull-bar').style.width=`${gameState.ship.hull}%`;
+            document.getElementById('hull-bar').textContent=`${Math.round(gameState.ship.hull)}%`;
+            document.getElementById('torpedo-count').textContent=`Torpedoes: ${gameState.ship.weapons.torpedoes.count}`;
+        }
+        
+        function updateTargetsUI(){
+            if(gameState.enemies.length === 0){
+                targetsList.innerHTML='<p class="text-gray-400 text-center">No targets detected.</p>';
+            } else {
+                targetsList.innerHTML='';
+                gameState.enemies.forEach(e=>{
+                    const b=document.createElement('button');
+                    b.className='w-full text-left p-2 rounded transition text-sm';
+                    b.textContent=`${e.name} (Hull: ${e.isScanned?`${e.hull}/${e.maxHull}`:'???'})`;
+                    if(gameState.ship.targetId===e.id){b.classList.add('bg-cyan-600');}
+                    else{b.classList.add('bg-gray-700','hover:bg-gray-600');}
+                    b.onclick=()=>{gameState.ship.targetId=e.id;updateAllUI();};
+                    targetsList.appendChild(b);
+                });
+            }
+
+            const hasTarget = !!gameState.ship.targetId;
+            const weaponsPowered = gameState.ship.power.weapons > 0;
+            const weaponsDamaged = gameState.ship.damagedSystems.has('weapons');
+
+            const styleButton = (button, enabled) => {
+                button.disabled = !enabled;
+                button.classList.remove('bg-gray-500', 'cursor-not-allowed', 'bg-teal-600', 'hover:bg-teal-500');
+                if (enabled) {
+                    button.classList.add('bg-teal-600', 'hover:bg-teal-500');
+                } else {
+                    button.classList.add('bg-gray-500', 'cursor-not-allowed');
+                }
+            };
+
+            const phasersReady = gameState.ship.weapons.phasers.ready;
+            const canFirePhasers = hasTarget && phasersReady && weaponsPowered && !weaponsDamaged;
+            styleButton(firePhasersBtn, canFirePhasers);
+            if (phasersReady) {
+                firePhasersBtn.textContent = "Phasers";
+            }
+            
+            const torpedoesReady = gameState.ship.weapons.torpedoes.ready;
+            const hasTorpedoes = gameState.ship.weapons.torpedoes.count > 0;
+            const canFireTorpedoes = hasTarget && torpedoesReady && hasTorpedoes && weaponsPowered && !weaponsDamaged;
+            styleButton(fireTorpedoesBtn, canFireTorpedoes);
+            if (torpedoesReady) {
+                fireTorpedoesBtn.textContent = "Torpedoes";
+            }
+
+            if (weaponsDamaged) {
+                firePhasersBtn.textContent = "DAMAGED";
+                fireTorpedoesBtn.textContent = "DAMAGED";
+            } else if (!weaponsPowered) {
+                firePhasersBtn.textContent = "NO POWER";
+                fireTorpedoesBtn.textContent = "NO POWER";
+            } else if (torpedoesReady && !hasTorpedoes) {
+                fireTorpedoesBtn.textContent = "NO TORPEDOES";
+            }
+        }
+
+        function spawnEnemy(name,hull,weakness){ 
+            const id=`enemy_${Date.now()}_${Math.random()}`;
+            gameState.enemies.push({id,name,hull,maxHull:hull,weakness,isScanned:false}); 
+            const ev=document.createElement('div');
+            ev.id=`vis_${id}`;
+            ev.className='enemy-ship';
+            ev.style.top=`${Math.random()*50+10}%`;
+            ev.style.left=`${Math.random()*80+10}%`;
+            ev.onclick=()=>{gameState.ship.targetId=id;updateAllUI();};
+            viewscreen.appendChild(ev);
+            updateAllUI();
+        }
+        function checkEnemyDefeat(enemy){
+            if(enemy.hull<=0){
+                gameState.enemies=gameState.enemies.filter(e=>e.id!==enemy.id);
+                document.getElementById(`vis_${enemy.id}`)?.remove();
+                if(gameState.ship.targetId===enemy.id)gameState.ship.targetId=null;
+                addCommsLog('SYSTEM',`${enemy.name} destroyed.`);
+                updateAllUI();
+            }
+        }
+        function regenerateShields(){
+            if(gameState.ship.shields<100&&!gameState.ship.damagedSystems.has('shields')){
+                const r=1*(1+(gameState.ship.powerEffects.shieldRegenBonus/100));
+                gameState.ship.shields=Math.min(100,gameState.ship.shields+r);
+                updateShipStatusUI();
+            }
+        }
+        function takeDamage(amount){
+            if(gameState.ship.hull<=0)return;
+            if(Math.random()*100<gameState.ship.powerEffects.evasionChance){addCommsLog('SYSTEM','Evaded!');return;}
+            viewscreen.classList.add('damage-flash');
+            setTimeout(()=>viewscreen.classList.remove('damage-flash'),300);
+            const dts=Math.min(gameState.ship.shields,amount);
+            gameState.ship.shields-=dts;
+            const rd=amount-dts;
+            if(rd>0){
+                gameState.ship.hull-=rd;
+                if(gameState.ship.hull<=0){
+                    gameState.ship.hull=0;
+                    const m=document.querySelector('.monitor');
+                    m.innerHTML=`<div class="flex flex-col items-center justify-center h-full p-8 text-center"><h1 class="font-orbitron text-5xl text-red-500 mb-4">Ship Destroyed</h1><p class="text-xl text-gray-300">Mission failure.</p><button onclick="location.reload()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded mt-8 text-lg">Try Again</button></div>`;
+                }
+            }
+            updateShipStatusUI();
+        }
+        function updateScienceUI(){
+            const t=gameState.enemies.find(e=>e.id===gameState.ship.targetId);
+            if(t){
+                scienceIdleDisplay.classList.add('hidden');
+                scanTargetDisplay.classList.remove('hidden');
+                scanTargetName.textContent=t.name;
+                scanBtn.disabled=t.isScanned;
+                scanBtn.textContent=t.isScanned?'Scan Complete':'Begin Scan';
+                if(t.isScanned){
+                    renderScanResults(t);
+                    scanResultsDisplay.classList.remove('hidden');
+                } else {
+                    scanResultsDisplay.classList.add('hidden');
+                }
+            } else {
+                scienceIdleDisplay.classList.remove('hidden');
+                scanTargetDisplay.classList.add('hidden');
+                scanResultsDisplay.classList.add('hidden');
+            }
+        }
+        scanBtn.addEventListener('click',()=>{
+            const t=gameState.enemies.find(e=>e.id===gameState.ship.targetId);
+            if(t&&!t.isScanned){
+                scanBtn.disabled=true;
+                let p=0;
+                const i=setInterval(()=>{
+                    p+=20;
+                    scanProgress.textContent=`Scanning... ${p}%`;
+                    if(p>=100){
+                        clearInterval(i);
+                        t.isScanned=true;
+                        addCommsLog('SCIENCE',`Scan of ${t.name} complete.`);
+                        scanProgress.textContent='';
+                        updateAllUI();
+                    }
+                },1000);
+            }
+        });
+        function renderScanResults(t){
+            scanResultsDisplay.innerHTML=`<h3 class="font-orbitron text-lg text-cyan-400">Results: ${t.name}</h3><p>Max Hull: ${t.maxHull}</p><p class="text-yellow-400">Weakness: ${t.weakness?t.weakness.charAt(0).toUpperCase()+t.weakness.slice(1):'None'}</p>`;
+        }
+        function handleWeaponCooldown(button, weapon, name){
+            weapon.ready=false;
+            const reduction=1-(gameState.ship.powerEffects.weaponCooldownReduction/100);
+            const actualCooldown=weapon.cooldown*reduction;
+            let timeLeft=actualCooldown;
+            const interval=setInterval(()=>{
+                timeLeft-=100;
+                if(timeLeft>0){
+                    button.textContent = `${name} (${(timeLeft/1000).toFixed(1)}s)`;
+                } else {
+                    clearInterval(interval);
+                    weapon.ready=true;
+                    updateAllUI();
+                }
+            },100);
+            button.textContent = `${name} (${(timeLeft/1000).toFixed(1)}s)`;
+            updateAllUI();
+        }
+        function gameLoop(){
+            if(gameState.isPaused)return;
+            gameState.enemies.forEach(e=>{if(Math.random()<0.33){addCommsLog('SYSTEM',`Incoming fire from ${e.name}!`);takeDamage(5);}});
+            gameState.activeHazards.forEach((h,id)=>{if(h.hazard_type==='asteroid_field'&&Math.random()<0.25){addCommsLog('SYSTEM','Asteroid impact!');takeDamage(10);}});
+        }
+        function presentChoice(e){
+            const c=document.createElement('div');
+            c.className='mt-2 p-2 border-t border-gray-600';
+            const t=document.createElement('p');
+            t.className='font-bold text-yellow-400';
+            t.textContent=e.prompt;c.appendChild(t);
+            e.options.forEach(o=>{
+                const b=document.createElement('button');
+                b.className='bg-cyan-700 hover:bg-cyan-600 w-full text-left mt-1 p-2 rounded';
+                b.textContent=o.text;
+                b.onclick=()=>{
+                    c.remove();
+                    const ti=missionScript.events.findIndex(ev=>ev.type==='label'&&ev.name===o.action);
+                    if(ti!==-1){gameState.eventIndex=ti;processNextEvent();}
+                };
+                c.appendChild(b);
+            });
+            commsLog.appendChild(c);
+            commsLog.scrollTop=commsLog.scrollHeight;
+        }
+        function renderAnomaly(e){
+            anomalyDisplay.classList.remove('hidden');
+            anomalyDisplay.innerHTML=`<h3 class="font-orbitron text-lg text-yellow-400">Anomaly!</h3><p class="my-2">${e.name}</p><button id="analyze-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded">Analyze</button>`;
+            document.getElementById('analyze-btn').onclick=()=>{
+                anomalyDisplay.querySelector('button').disabled=true;
+                anomalyDisplay.querySelector('button').textContent='Analyzing...';
+                setTimeout(()=>{
+                    addCommsLog('SCIENCE',`Analysis of ${e.name} complete.`);
+                    gameState.missionVariables.set(e.variable,true);
+                    anomalyDisplay.classList.add('hidden');
+                    gameState.isPaused=false;
+                    gameState.eventIndex++;
+                    processNextEvent();
+                },5000);
+            };
+        }
+        function damageSystem(s,m){
+            if(!gameState.ship.damagedSystems.has(s)){
+                gameState.ship.damagedSystems.add(s);
+                addCommsLog('ENGINEERING',m);
+                renderDamageControl();
+                updateAllUI();
+            }
+        }
+        function renderDamageControl(){
+            damageControl.innerHTML='<h3 class="font-orbitron mb-2 text-sm">Damage Control</h3>';
+            if(gameState.ship.damagedSystems.size===0){
+                damageControl.innerHTML+='<p class="text-xs">All systems nominal.</p>';
+                return;
+            }
+            gameState.ship.damagedSystems.forEach(s=>{
+                const b=document.createElement('button');
+                b.className='bg-red-600 hover:bg-red-500 text-white font-bold py-1 px-2 text-sm rounded w-full mt-2';
+                b.textContent=`Repair ${s.charAt(0).toUpperCase()+s.slice(1)}`;
+                b.onclick=()=>{
+                    b.disabled=true;
+                    b.textContent='Repairing...';
+                    setTimeout(()=>{
+                        gameState.ship.damagedSystems.delete(s);
+                        addCommsLog('ENGINEERING',`${s.charAt(0).toUpperCase()+s.slice(1)} repaired.`);
+                        renderDamageControl();
+                        updateAllUI();
+                    },10000);
+                };
+                damageControl.appendChild(b);
+});
+        }
+        function startHazard(e){
+            const id=`hazard_${Date.now()}`;
+            const d=e.duration||30000;
+            addCommsLog('SYSTEM',`Warning: Entering ${e.message}.`);
+            gameState.activeHazards.set(id,e);
+            if(e.hazard_type==='nebula'){
+                scienceHazardOverlay.innerHTML='<div class="font-orbitron text-red-400 font-bold text-lg">SENSOR MALFUNCTION<br>NEBULA INTERFERENCE</div>';
+                scienceHazardOverlay.classList.remove('hidden');
+            }
+            setTimeout(()=>endHazard(id,e),d);
+        }
+        function endHazard(id,e){
+            gameState.activeHazards.delete(id);
+            addCommsLog('SYSTEM',`Cleared the ${e.message.split(' ')[1]}.`);
+            if(e.hazard_type==='nebula'){
+                scienceHazardOverlay.classList.add('hidden');
+                updateScienceUI();
+            }
+        }
+
     </script>
 </body>
 </html>
