@@ -2,6 +2,7 @@ window.currentLoadedMission = {
     title: "The Hunt",
     comicUnlock: "crystalline_mission_2_complete", // Unlocks the second comic panel
     events: [
+        { type: "photo", src: "https://i.ibb.co/HL0mnW3T/TEST-IMAGE.png"},
         { type: "sound", src: "Sounds/ambient-soundscapes-007-space-atmosphere-304974.mp3", loop: true },
         { type: "dialogue", speaker: "CAPTAIN", message: "Good work on that first encounter. Science team, have you been able to analyze the energy trail from those ships?" },
         { type: "dialogue", speaker: "SCIENCE OFFICER", message: "Yes, Captain. The trail is faint, but I'm projecting its course now. It leads directly into that plasma nebula ahead." },
@@ -48,4 +49,5 @@ window.currentLoadedMission = {
         }
     ]
 };
+
 
