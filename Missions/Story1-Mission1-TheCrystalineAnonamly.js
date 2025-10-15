@@ -4,6 +4,7 @@ window.currentLoadedMission = {
     events: [
         // CORRECTED PATH: This now points to a folder relative to your index.html
         { type: "sound", src: "Sounds/ambient-soundscapes-007-space-atmosphere-304974.mp3", loop: true },
+        { type: "photo", src: "https://lh3.googleusercontent.com/rd-gg-dl/AJfQ9KR4oNEoJdXyKcpxGMPVvAa8XaYEEkzYx4N3jBhsGOlQTts6qlD7X5n4nsveeVqkzWvdoTMAKPv8L30wmaJiek6VUCk8W0xOegNPwFUkCI0rvzL8knyhECpOIb8IrlC91lGoujd8_9Xdiy3CBr0q3Bf336TEoMB5SHxHGiTcTdag5ZUHHoaAq_nPEoklPHGI6e1RXL6lOryjE5Bp3Z5_10wz6QF66v8sYn5ga9X9ItZTuscyds5CFKkqGpkg72iZctBZIE1aIITtk_Z4GrIVV0wOPiPcFEPtS_P2RuI9f8jMUIKOeSB05cfF55vNKhBIBpjN_MgjJTpgjRpTXga-vE_UmBqYaYm2KibABMVDzbKi-pNpGsmC6Jq94xt9usnB8GzagBsbE6mQMXbqYHQHtCahSzsvBeAALRaV0QAnFo0EVV0Iwt0vHe_fhmM1QCTnbNGOKD02DbdATk--7RBN9vqBJURoKiZa6KYU4u9Koi0xG32v6JuLfpc_E_d5wanrWaGEVqhRcF0bK0z4KN60VWBowTD-auhAjW9KC7G5KdETSc6NYn9dG6tWbluf5HYza9HYxF8c3uRtuamNf4j9PrmsATkBdFYPItyazn1G2r2CzoEe7yFeDOgz4aAVrsXgkhzDbyxFfiAftbURs66G3pN9E9_v2ZXvPUsXCXmdZJNkuFbWbUKww_IgCs8ENJoi3GSR5Zd1admLkh3RT5gxY0Q175Dnwfj-tQwbah4JJUq8soAALuXIZfd1dbs-KOYTAkpvnVe2oBdP0G29DmLupGPMkmr5SWcCuOWKdet_I6EvSXtS7dqQZi8Cov_1SigQpZwcb1HlK6al6gAM78YWN4CbNzOJM0tDuDX3mX8HH7yEuTp6C02DunEe7QIfg94yNQQFdGn0_7S5RzE9ULYPjw8qjWSv35m_bhhAZEW1kR4_-JWn4Q1Mf89AByscvKZz9CMZLuw51AT-IhxJn_gZ0hTOIlNKTDdONiZpMDPaN4afPHR-YiyttURTZZ8ukBJfGIJFGtps91KOVJ7Kt9YYurYrRJ543kfbPEKshFvcllrV0Ypx-V9Ofprly8ZQE4vLaXVSxr4xN7rxsqdeX3IGo5EJYzkwTEuNf4-wjnuvfA6dMNka68_mM8izpMAybOhuU6fux7Ztbe1__t5EgZev2HEFFurAzQul=s1024-rj" },
         { type: "dialogue", speaker: "TRAINING", message: "Welcome to the Crystalline Anomaly mission series." },
         { type: "dialogue", speaker: "COMMS", message: "Captain, we're picking up a strange energy signature from the nearby asteroid field." },
         { type: "dialogue", speaker: "SCIENCE", message: "It's unlike anything I've seen before. High-energy, but erratic. I recommend a cautious approach." },
@@ -40,4 +41,5 @@ window.currentLoadedMission = {
         { type: "end_mission", title: "Mission Complete", message: "You survived the first encounter with the Crystalline entities and discovered their weakness. Their energy trail leads deeper into unknown space." }
     ]
 };
+
 
