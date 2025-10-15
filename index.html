@@ -110,8 +110,9 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         .star { position: absolute; background-color: white; border-radius: 50%; }
         
-        .comic-modal{position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:1000}
-        .comic-container{width:90%;max-width:1200px;height:90%;background-color:#0a141c;border:2px solid var(--border-color);border-radius:1rem;padding:1rem;display:flex;flex-direction:column}
+        .comic-modal, .photo-modal {position:fixed;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:1000}
+        .comic-container, .photo-container {width:90%;max-width:1200px;background-color:#0a141c;border:2px solid var(--border-color);border-radius:1rem;padding:1rem;display:flex;flex-direction:column}
+        .photo-container { max-width: 800px; }
         .comic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem;overflow-y:auto;flex-grow:1;padding:1rem}
         .comic-panel{background-color:#333;border:2px solid #555;border-radius:8px;aspect-ratio:4/3;display:flex;justify-content:center;align-items:center;overflow:hidden;position:relative}
         .comic-panel img{width:100%;height:100%;object-fit:cover}
@@ -257,6 +258,14 @@
                     <div id="comic-grid" class="comic-grid"></div>
                 </div>
             </div>
+
+            <div id="photo-modal" class="photo-modal hidden">
+                <div class="photo-container">
+                    <img id="photo-modal-img" src="" alt="Mission Photo" class="w-full h-auto object-contain max-h-[70vh] mb-4">
+                    <p id="photo-modal-caption" class="text-center text-lg text-gray-300 mb-4"></p>
+                    <button id="photo-modal-continue" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded w-full md:w-1/2 mx-auto">Continue</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -297,6 +306,12 @@
         const closeComicBtn = document.getElementById('close-comic-btn');
         const comicGrid = document.getElementById('comic-grid');
 
+        const photoModal = document.getElementById('photo-modal');
+        const photoModalImg = document.getElementById('photo-modal-img');
+        const photoModalCaption = document.getElementById('photo-modal-caption');
+        const photoModalContinue = document.getElementById('photo-modal-continue');
+
+
         // Game State
         let gameState = {};
         let missionScript = null;
@@ -331,7 +346,7 @@
         function playSoundEffect(name) {
             if (soundBank[name] && audioContext && audioContext.state === 'running') {
                 const source = audioContext.createBufferSource();
-                source.buffer = Bank[name];
+                source.buffer = soundBank[name];
                 source.connect(audioContext.destination);
                 source.start(0);
             }
@@ -363,6 +378,7 @@
         const comicPanels = [
              { id: "crystalline_mission_1_complete", title: "The Crystalline Anomaly", imgSrc: "https://placehold.co/800x600/0a141c/26c4da?text=Chapter+1" },
              { id: "crystalline_mission_2_complete", title: "The Hunt", imgSrc: "https://placehold.co/800x600/0a141c/26c4da?text=Chapter+2" },
+             { id: "crystalline_mission_3_complete", title: "The Source", imgSrc: "https://placehold.co/800x600/0a141c/26c4da?text=Chapter+3" },
         ];
         let unlockedComics = new Set(JSON.parse(localStorage.getItem('unlockedComics')) || []);
 
@@ -451,6 +467,7 @@
             scanResultsDisplay.classList.add('hidden');
             anomalyDisplay.classList.add('hidden');
             scienceHazardOverlay.classList.add('hidden');
+            photoModal.classList.add('hidden');
             targetsList.innerHTML = '<p class="text-gray-400 text-center">No targets detected.</p>';
         }
 
@@ -465,9 +482,9 @@
             resetGameState();
             setupScreen.classList.add('hidden');
             bridgeUI.classList.remove('hidden');
-            loadSound('comms_beep', 'Sounds/commsBeep.mp3');
-            loadSound('phaser_fire', 'Sounds/phasersBlast.mp3');
-            loadSound('torpedo_launch', 'Sounds/torpedoFire.mp3');
+            loadSound('comms_beep', 'Sounds/ui_beep.wav');
+            loadSound('phaser_fire', 'Sounds/phaser_beam.wav');
+            loadSound('torpedo_launch', 'Sounds/torpedo_fire.mp3');
             updateAllPowerSliders([34, 33, 33]);
             updateAllUI();
             createStarfield();
@@ -486,6 +503,13 @@
                 case 'dialogue': addCommsLog(event.speaker, event.message); break;
                 case 'sound': playMusic(event.src, event.loop); break;
                 case 'stop_sound': stopMusic(event.src); break;
+                case 'photo':
+                    gameState.isPaused = true;
+                    photoModalImg.src = event.src;
+                    photoModalCaption.textContent = event.caption || '';
+                    photoModal.classList.remove('hidden');
+                    advance = false;
+                    break;
                 case 'jump':
                     let doJump = true;
                     if (event.condition) {
@@ -527,6 +551,13 @@
             }
         }
         
+        photoModalContinue.addEventListener('click', () => {
+            photoModal.classList.add('hidden');
+            gameState.isPaused = false;
+            gameState.eventIndex++;
+            processNextEvent();
+        });
+
         function addCommsLog(speaker, message) {
             const logEntry = document.createElement('div');
             logEntry.innerHTML = `<p><strong class="text-cyan-400">${speaker}:</strong> ${message}</p>`;
@@ -585,66 +616,35 @@
             setTimeout(() => { isAdjustingPower = false; }, 50);
         }
 
-        // **REPAIRED AND REBUILT POWER MANAGEMENT LOGIC**
         function handlePowerChange(changedSlider) {
             if (isAdjustingPower) return;
             isAdjustingPower = true;
 
-            const sliders = {
-                shields: shieldsSlider,
-                engines: enginesSlider,
-                weapons: weaponsSlider
-            };
-            const values = {
-                shields: parseInt(shieldsSlider.value),
-                engines: parseInt(enginesSlider.value),
-                weapons: parseInt(weaponsSlider.value)
-            };
-
+            const sliders = { shields: shieldsSlider, engines: enginesSlider, weapons: weaponsSlider };
+            const values = { shields: parseInt(shieldsSlider.value), engines: parseInt(enginesSlider.value), weapons: parseInt(weaponsSlider.value) };
             const changedKey = changedSlider.id.split('-')[0];
             const otherKeys = Object.keys(sliders).filter(k => k !== changedKey);
             
-            const total = values.shields + values.engines + values.weapons;
+            let total = values.shields + values.engines + values.weapons;
             let diff = total - 100;
 
-            // Distribute the difference across the other two sliders
-            const otherSlider1 = otherKeys[0];
-            const otherSlider2 = otherKeys[1];
-
-            let val1 = values[otherSlider1];
-            let val2 = values[otherSlider2];
-
-            // Take power from the slider with more power first
-            if (val1 > val2) {
-                const take1 = Math.min(val1, diff);
-                val1 -= take1;
-                diff -= take1;
-            } else {
-                 const take2 = Math.min(val2, diff);
-                val2 -= take2;
-                diff -= take2;
-            }
-            // Take any remaining from the other slider
-            const take_rem_1 = Math.min(val1, diff);
-            val1 -= take_rem_1;
-            diff -= take_rem_1;
+            const adjust = (key, amount) => {
+                const newVal = values[key] - amount;
+                if (newVal < 0) {
+                    const remainingDiff = amount - values[key];
+                    values[key] = 0;
+                    return remainingDiff;
+                }
+                values[key] = newVal;
+                return 0;
+            };
             
-            const take_rem_2 = Math.min(val2, diff);
-            val2 -= take_rem_2;
-            diff -= take_rem_2;
+            let remainingDiff = adjust(otherKeys[0], Math.ceil(diff / 2));
+            remainingDiff += adjust(otherKeys[1], Math.floor(diff / 2) + remainingDiff);
+            values[changedKey] -= remainingDiff;
             
-            values[otherSlider1] = val1;
-            values[otherSlider2] = val2;
-
-            // Final check to ensure total is exactly 100
-            const finalTotal = values.shields + values.engines + values.weapons;
-            if (finalTotal !== 100) {
-                values[changedKey] += (100 - finalTotal);
-            }
-
             updateAllPowerSliders([values.shields, values.engines, values.weapons]);
             
-            // Release the lock
             setTimeout(() => { isAdjustingPower = false; }, 20); 
         }
 
