@@ -1,173 +1,62 @@
 
-# Spaceship Bridge Simulator
+# Spaceship Bridge Simulator & Mission Creator
 
-Welcome to the Spaceship Bridge Simulator! This is a web-based game designed for a solo player to manage the four key stations of a starship: Communications, Weapons, Science, and Engineering. It was created as an educational tool to teach problem-solving, resource management, and basic coding concepts through interactive storytelling.
+Welcome to the Spaceship Bridge Simulator, an interactive, web-based game that puts you and your friends in command of a starship. This project features a fully playable bridge simulator and a powerful, user-friendly Mission Creator that allows anyone to design their own narrative-driven adventures.
+
+This project is designed to be an educational tool for middle school students (grades 5-8), teaching concepts of game design, narrative structure, and collaborative problem-solving in a fun and engaging way.
 
 ## Key Features
 
--   **Multi-Station Gameplay:** Manage four distinct bridge stations, each with unique functions and responsibilities.
+-   **Multi-Station Gameplay:** Manage five unique bridge stations: Comms, Tactical, Engineering, Science, and Trade.
     
--   **Dynamic Mission Scripting:** The game is driven by simple JavaScript mission files, allowing for endless new stories and challenges.
+-   **Dynamic Mission System:** Load custom-built missions created with the visual editor.
     
--   **Full Sound Engine:** Features a robust audio system for background music and sound effects, powered by the Web Audio API.
+-   **Visual Mission Creator:** An intuitive, web-based tool that allows users to build complex missions with a simple point-and-click interface. No coding required!
     
--   **Story Arcs & Webcomics:** Play through multi-part stories and unlock panels of a webcomic as a reward for completing missions.
+-   **AI-Powered "Free Play" Mode:** Generate a brand-new, unique mission on the fly with a single click, providing endless replayability.
     
--   **Interactive Events:** Encounter system damage, environmental hazards, moral dilemmas, and scannable anomalies.
+-   **Rich Event System:** Create missions with dialogue, branching player choices, enemy encounters, system damage, video playback, and timed events.
     
--   **Fully Responsive UI:** The simulator interface is designed to work on a wide range of devices, from desktop monitors to tablets.
-    
-
-## How to Play
-
-Because web browsers have security rules about loading local files (especially audio), you cannot simply open the `index.html` file by double-clicking it. You must run it from a simple web server. This sounds complicated, but it's very easy!
-
-### Running the Simulator Locally
-
-1.  **Install Node.js (A one-time setup):** If you don't have it, download and install the "LTS" version from [nodejs.org](https://nodejs.org/ "null"). This is a standard, safe tool for web development.
-    
-2.  **Open a Terminal/Command Prompt:**
-    
-    -   On Windows, open the Start Menu, type `cmd`, and press Enter.
-        
-    -   On Mac, open Spotlight (Cmd+Space), type `Terminal`, and press Enter.
-        
-3.  **Navigate to the Project Folder:** Type `cd` followed by a space, then drag and drop your main project folder into the terminal window and press Enter.
-    
-4.  **Start the Server:** Type the following command and press Enter:
-    
-    ```
-    npx http-server
-    
-    ```
-    
-5.  **Play!** The terminal will give you a local web address (like `http://127.0.0.1:8080`). Copy this address, paste it into your web browser, and the simulator will start.
+-   **Interactive Notifications:** A glowing notification system guides players to the action, ensuring they never miss a critical event.
     
 
-### File Structure
+## How to Play the Simulator
 
--   `index.html`: The core game engine. This file runs the entire simulator.
+1.  Open the `index.html` file in your web browser.
     
--   `*.js` (e.g., `crystalline_mission_1.js`): These are the mission script files.
+2.  **Load a Mission:** Click the "Load Mission" button and select a mission file (e.g., `new_ship_diagnostics.js`) from the `missions` folder.
     
--   `/Sounds`: This folder contains all the music and sound effect files used by the game.
+3.  **Free Play:** Alternatively, click the "Free Play" button to have the AI generate a random mission for you.
     
-
-## Creating Your Own Missions
-
-Making a mission is like writing a script for a play or a movie. You create a list of events that happen one after another.
-
-### The Mission File Format
-
-A mission file is a JavaScript (`.js`) file that contains a single object assigned to `window.currentLoadedMission`. This is the required format for the game's loader to work correctly.
-
-```
-window.currentLoadedMission = {
-    title: "My Awesome Mission",
-    comicUnlock: "my_mission_complete", // Optional: ID to unlock a comic panel
-    events: [
-        // Your list of event objects goes here!
-        { type: "dialogue", speaker: "CAPTAIN", message: "Let's begin the mission." },
-        { type: "end_mission", title: "Mission Complete", message: "You did it!" }
-    ]
-};
-
-```
-
-### All Event Types
-
-Here are all the event types you can use in the `events` array:
-
--   **`dialogue`**: Shows a message in the Comms panel.
-    
-    -   `speaker`: The name of the person talking.
-        
-    -   `message`: The text they say.
-        
--   **`wait`**: Pauses the mission for a set time.
-    
-    -   `duration`: Time in milliseconds (e.g., `5000` is 5 seconds).
-        
--   **`spawn_enemy`**: Creates an enemy ship.
-    
-    -   `name`: The enemy's name.
-        
-    -   `hull`: The enemy's health.
-        
-    -   `weakness`: (Optional) `"phasers"` or `"torpedoes"`.
-        
--   **`choice`**: Presents the player with a choice.
-    
-    -   `prompt`: The question to ask.
-        
-    -   `options`: A list of choices, each with `text` (for the button) and `action` (the `label` to jump to).
-        
--   **`label`**: An invisible bookmark in your script for `choice` and `jump` events.
-    
-    -   `name`: The unique name for this label.
-        
--   **`jump`**: Jumps to a specific `label`, often based on a condition.
-    
-    -   `target`: The `name` of the label to go to.
-        
-    -   `condition`: (Optional) A check that must be true to jump.
-        
-        -   `type: "enemies_exist"`: Jumps if there are still enemies.
-            
-        -   `type: "variable_not_set"`: Jumps if an `anomaly` has not been analyzed yet.
-            
--   **`sound` & `stop_sound`**: Plays or stops a background music track.
-    
-    -   `src`: The path to the sound file (e.g., `Sounds/battle_music.mp3`).
-        
-    -   `loop`: `true` for repeating music, `false` for a one-time sound.
-        
--   **`anomaly`**: Creates a science anomaly that must be analyzed.
-    
-    -   `name`: The name of the anomaly.
-        
-    -   `variable`: The mission variable that gets set upon completion.
-        
--   **`system_damage`**: Damages a ship system, requiring repair.
-    
-    -   `system`: `"shields"`, `"engines"`, or `"weapons"`.
-        
-    -   `message`: The alert that appears in Comms.
-        
--   **`environmental_hazard`**: Creates a temporary hazard.
-    
-    -   `hazard_type`: `"asteroid_field"` or `"nebula"`.
-        
-    -   `duration`: How long it lasts in milliseconds.
-        
-    -   `message`: A short description for the Comms log.
-        
--   **`set_objective` & `clear_objective`**: Displays or removes an objective on screen.
-    
-    -   `message`: The text of the objective.
-        
--   **`end_mission`**: Ends the mission.
-    
-    -   `title`: The title of the end screen (e.g., "Victory!").
-        
-    -   `message`: The descriptive text.
-        
-
-## License
-
-This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)**.
-
-You are free to:
-
--   **Share** — copy and redistribute the material in any medium or format.
-    
--   **Adapt** — remix, transform, and build upon the material.
+4.  **Command the Ship:** As the mission progresses, use the navigation icons on the left to switch between stations and respond to events. Work as a team to overcome challenges!
     
 
-Under the following terms:
+## How to Create Missions
 
--   **Attribution** — You must give appropriate credit.
+The Mission Creator allows you to design your own stories without writing any code.
+
+1.  Open the `Bridge Simulator Mission Creator.html` file in your browser.
     
--   **NonCommercial** — You may not use the material for commercial purposes.
+2.  **Name Your Mission:** Give your adventure a title in the "Mission Details" panel.
     
--   **ShareAlike** — If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original.
+3.  **Add Events:** Use the "Add Event" panel to build your story step-by-step. Choose from dialogue, combat, player choices, and more.
+    
+4.  **Build Your Timeline:** Each event you add will appear on the timeline on the right. The story plays from left to right.
+    
+5.  **Export:** When you're done, click the "Export Mission File" button. This will save a `.js` file to your computer.
+    
+6.  **Play:** Move the exported file into the `missions` folder and load it in the main game!
+    
+
+## Technology Stack
+
+-   **Frontend:** HTML5, CSS3, JavaScript
+    
+-   **3D Graphics:** Three.js
+    
+-   **Styling:** Tailwind CSS
+    
+-   **AI Mission Generation:** Google's Generative AI
+    
+
+This project is fully self-contained in three HTML files and requires no backend or server to run.
