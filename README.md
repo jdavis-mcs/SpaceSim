@@ -7,9 +7,7 @@ Welcome to the Spaceship Bridge Simulator, an interactive, web-based game that p
 
 You can play the latest version of the simulator directly in your browser by visiting our official Netlify deployment:
 
-[**>> Click Here to Play the Spaceship Bridge Simulator <<**](https://www.google.com/search?q=https://your-site-name.netlify.app/ "null")
-
-_(Note: You will need to replace `your-site-name.netlify.app` with your actual Netlify URL after following the deployment guide!)_
+[**>> Click Here to Play the Spaceship Bridge Simulator <<**](https://cerulean-dodol-0e31cb.netlify.app/ "null")
 
 ## Key Features
 
