@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bridge Simulator - Mission Editor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --panel-bg: rgba(20, 30, 50, 0.9);
+            --border-color: #2a9d8f;
+            --text-cyan: #26c4da;
+            --text-light: #e0f2f1;
+            --accent-yellow: #f59e0b;
+            --bg-dark: #0a141c;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+        }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+        }
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: 100%;
+            min-height: 0;
+        }
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        input, select, textarea, button {
+            transition: all 0.2s ease-in-out;
+        }
+        input, select, textarea {
+            background-color: rgba(10, 20, 35, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 0.5rem;
+            color: var(--text-light);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--accent-yellow);
+            border-color: var(--accent-yellow);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+        .event-btn {
+            background-color: #1e40af; /* blue-800 */
+        }
+        .event-btn:hover {
+            background-color: #1d4ed8; /* blue-700 */
+        }
+        
+        #timeline-container {
+            flex-grow: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            border: 1px solid var(--border-color);
+            background: radial-gradient(circle, rgba(10,25,40,0.8) 0%, rgba(10,20,30,0.9) 100%);
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        #timeline {
+            display: inline-flex;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            min-height: 200px;
+        }
+        .event-block {
+            width: 200px;
+            flex-shrink: 0;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.75rem;
+            background-color: var(--panel-bg);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+            white-space: normal;
+            vertical-align: top;
+            position: relative;
+        }
+        .event-block:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(42, 157, 143, 0.5);
+        }
+        .delete-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background-color: #e53e3e;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid white;
+            opacity: 0;
+            transition: opacity 0.2s;
+            cursor: pointer;
+        }
+        .event-block:hover .delete-btn {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4 bg-gray-900 text-gray-100">
+
+    <div class="main-grid">
+        <!-- Left Panel for Controls -->
+        <div class="left-panel">
+            <div id="mission-meta" class="p-4 rounded-lg" style="background-color: var(--panel-bg);">
+                <h2 class="text-xl font-orbitron text-cyan-300 border-b-2 border-cyan-700/50 pb-2 mb-4">Mission Details</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="mission-title" class="block text-sm font-medium mb-1">Mission Title</label>
+                        <input type="text" id="mission-title" placeholder="e.g., The Kobayashi Maru">
+                    </div>
+                     <div>
+                        <label for="mission-unlock" class="block text-sm font-medium mb-1">Comic Unlock ID (Optional)</label>
+                        <input type="text" id="mission-unlock" placeholder="e.g., kobyashi_complete">
+                    </div>
+                </div>
+            </div>
+
+            <div id="event-panel" class="p-4 rounded-lg flex-grow overflow-y-auto" style="background-color: var(--panel-bg);">
+                <h2 class="text-xl font-orbitron text-cyan-300 border-b-2 border-cyan-700/50 pb-2 mb-4">Add Event</h2>
+                <div id="event-list" class="grid grid-cols-2 gap-2">
+                    <!-- Event buttons populated by JS -->
+                </div>
+                <div id="event-details" class="mt-4">
+                    <h3 id="event-details-title" class="text-lg font-bold text-amber-400 mb-2"></h3>
+                    <div id="event-instructions" class="mb-3 p-2 bg-black/20 border-l-4 border-cyan-500 rounded-r-md"></div>
+                    <div id="event-form-content" class="space-y-3"></div>
+                    <button id="add-event-btn" class="hidden mt-4 w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-md">Add to Timeline</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel for Timeline and Export -->
+        <div class="right-panel">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-2xl font-orbitron text-cyan-300">Mission Timeline</h2>
+                 <button id="export-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2 px-4 rounded-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    Export Mission File
+                </button>
+            </div>
+            <div id="timeline-container">
+                <div id="timeline"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const eventList = document.getElementById('event-list');
+        const eventDetails = document.getElementById('event-details');
+        const eventDetailsTitle = document.getElementById('event-details-title');
+        const eventInstructions = document.getElementById('event-instructions');
+        const eventFormContent = document.getElementById('event-form-content');
+        const addEventBtn = document.getElementById('add-event-btn');
+        const timeline = document.getElementById('timeline');
+        const exportBtn = document.getElementById('export-btn');
+        const missionTitleInput = document.getElementById('mission-title');
+        const missionUnlockInput = document.getElementById('mission-unlock');
+
+        let currentEventType = null;
+
+        const eventTypes = {
+            dialogue: { name: 'Dialogue', fields: [
+                { id: 'speaker', label: 'Speaker', type: 'text', placeholder: 'e.g., CAPTAIN' },
+                { id: 'message', label: 'Message', type: 'textarea', placeholder: 'The message content...' }
+            ], instructions: 'Adds a line of text to the Comms log. The message can be multiple lines.' },
+            spawn_enemy: { name: 'Spawn Enemy', fields: [
+                { id: 'name', label: 'Enemy Name', type: 'text', placeholder: 'e.g., Pirate Marauder' },
+                { id: 'hull', label: 'Hull Points', type: 'number', placeholder: '100' },
+                { id: 'behavior', label: 'Behavior', type: 'select', options: ['aggressive', 'passive'] }
+            ], instructions: 'Creates an enemy ship. Check "Wait for Defeat" to pause the mission until this ship is destroyed.' },
+            player_choice: { name: 'Player Choice', fields: [
+                { id: 'message', label: 'Prompt Message', type: 'textarea', placeholder: 'e.g., Do we hail them or raise shields?' },
+                { id: 'variable', label: 'Variable to Store Choice', type: 'text', placeholder: 'e.g., opening_move' }
+            ], instructions: 'Asks the player a question with buttons. When a choice is made, its value is stored in the specified variable.' },
+             set_variable: { name: 'Set Variable', fields: [
+                { id: 'name', label: 'Variable Name', type: 'text', placeholder: 'e.g., greeted_aliens' },
+                { id: 'value', label: 'Value', type: 'text', placeholder: 'e.g., true' }
+            ], instructions: 'Sets a variable to a specific value, useful for tracking story progress.'},
+             environmental_hazard: { name: 'Environmental Hazard', fields: [
+                { id: 'hazard_type', label: 'Hazard Type', type: 'select', options: ['asteroid_field', 'nebula'] },
+                { id: 'duration', label: 'Duration (ms)', type: 'number', placeholder: 'e.g., 30000' },
+                { id: 'message', label: 'Alert Message', type: 'text', placeholder: 'e.g., a dense asteroid field' }
+            ], instructions: 'Creates a dangerous area of space that affects the ship for a period of time.'},
+            system_damage: { name: 'Damage System', fields: [
+                 { id: 'system', label: 'System', type: 'select', options: ['shields', 'engines', 'weapons'] },
+                 { id: 'message', label: 'Alert Message', type: 'text', placeholder: 'e.g., A plasma leak has disabled the engines!' }
+            ], instructions: 'Damages a ship system, forcing the Engineer to repair it.'},
+             wait: { name: 'Wait', fields: [
+                { id: 'duration', label: 'Duration (ms)', type: 'number', placeholder: 'e.g., 5000' }
+            ], instructions: 'Pauses the mission for a specified amount of time.'},
+            set_objective: { name: 'Set Objective', fields: [
+                { id: 'message', label: 'Objective Text', type: 'textarea', placeholder: 'e.g., Defeat all enemy ships.' }
+            ], instructions: 'Displays a clear objective at the bottom of the Comms panel.' },
+            clear_objective: { name: 'Clear Objective', fields: [], instructions: 'Removes the current objective from the Comms panel.' },
+            end_mission: { name: 'End Mission', fields: [
+                { id: 'title', label: 'End Title', type: 'text', placeholder: 'e.g., Mission Complete' },
+                { id: 'message', label: 'End Message', type: 'textarea', placeholder: 'e.g., You saved the federation!' }
+            ], instructions: 'Ends the mission and displays a final message to the player.' },
+        };
+
+        function populateEventList() {
+            for (const type in eventTypes) {
+                const button = document.createElement('button');
+                button.textContent = eventTypes[type].name;
+                button.dataset.type = type;
+                button.className = 'w-full p-2 rounded-md text-white transition duration-300 event-btn';
+                eventList.appendChild(button);
+            }
+        }
+
+        function createEventForm(type) {
+            currentEventType = type;
+            const event = eventTypes[type];
+            eventDetailsTitle.textContent = event.name;
+            eventFormContent.innerHTML = '';
+            
+            eventInstructions.innerHTML = `<p class="text-sm text-cyan-200/80 italic">${event.instructions}</p>`;
+            eventInstructions.classList.remove('hidden');
+
+            let formHtml = event.fields.map(field => {
+                let inputHtml = '';
+                switch (field.type) {
+                    case 'textarea':
+                        inputHtml = `<textarea id="event-${field.id}" class="w-full" rows="3" placeholder="${field.placeholder || ''}"></textarea>`;
+                        break;
+                    case 'select':
+                        const optionsHtml = field.options.map(opt => `<option value="${opt}">${opt.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>`).join('');
+                        inputHtml = `<select id="event-${field.id}" class="w-full">${optionsHtml}</select>`;
+                        break;
+                    default:
+                        inputHtml = `<input type="${field.type}" id="event-${field.id}" class="w-full" placeholder="${field.placeholder || ''}">`;
+                }
+                return `<div><label for="event-${field.id}" class="block text-sm font-medium mb-1">${field.label}</label>${inputHtml}</div>`;
+            }).join('');
+            
+            if (type === 'spawn_enemy') {
+                formHtml += `<div class="flex items-center mt-3"><input id="event-waitForAllDefeated" type="checkbox" class="h-4 w-4 rounded border-gray-400 text-cyan-500 focus:ring-cyan-500"><label for="event-waitForAllDefeated" class="ml-2 block text-sm text-gray-200">Wait for Defeat?</label></div>`;
+            }
+
+            if (type === 'player_choice') {
+                formHtml += `
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2">Choices</h4>
+                        <div id="choices-container" class="space-y-2"></div>
+                        <button type="button" id="add-choice-btn" class="mt-2 text-sm bg-blue-600 hover:bg-blue-500 text-white py-1 px-3 rounded-md">+ Add Choice</button>
+                    </div>`;
+            }
+
+            eventFormContent.innerHTML = formHtml;
+            addEventBtn.classList.remove('hidden');
+            eventDetails.classList.remove('hidden');
+
+            if (type === 'player_choice') {
+                document.getElementById('add-choice-btn').addEventListener('click', addChoiceInput);
+                addChoiceInput(); // Start with one choice
+            }
+        }
+
+        function addChoiceInput() {
+            const container = document.getElementById('choices-container');
+            const choiceDiv = document.createElement('div');
+            choiceDiv.className = 'flex items-center gap-2 bg-black/20 p-2 rounded-md';
+            choiceDiv.innerHTML = `
+                <input type="text" class="choice-text w-1/2" placeholder="Button Text">
+                <input type="text" class="choice-value w-1/2" placeholder="Variable Value">
+                <button type="button" class="remove-choice-btn bg-red-600 hover:bg-red-500 text-white font-bold w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center">&times;</button>
+            `;
+            container.appendChild(choiceDiv);
+            choiceDiv.querySelector('.remove-choice-btn').addEventListener('click', () => container.removeChild(choiceDiv));
+        }
+
+        function addEventToTimeline() {
+            if (!currentEventType) return;
+
+            const event = eventTypes[currentEventType];
+            const eventBlock = document.createElement('div');
+            eventBlock.className = 'event-block';
+            eventBlock.dataset.type = currentEventType;
+
+            let title = event.name;
+            let summary = '';
+
+            event.fields.forEach(field => {
+                const input = document.getElementById(`event-${field.id}`);
+                eventBlock.dataset[field.id] = input.value;
+                if (field.id === 'message' || field.id === 'name' || field.id === 'speaker' || field.id === 'duration') {
+                    summary += `<p class="text-xs text-gray-400 truncate">${input.value}</p>`;
+                }
+            });
+
+            if (currentEventType === 'spawn_enemy') {
+                const waitForDefeat = document.getElementById('event-waitForAllDefeated').checked;
+                if (waitForDefeat) {
+                    eventBlock.dataset.waitForAllDefeated = 'true';
+                    title += ' (Wait)';
+                }
+            }
+
+            if (currentEventType === 'player_choice') {
+                const choices = [];
+                document.querySelectorAll('#choices-container .flex').forEach(choiceDiv => {
+                    const text = choiceDiv.querySelector('.choice-text').value;
+                    const value = choiceDiv.querySelector('.choice-value').value;
+                    if (text && value) {
+                        choices.push({ text, value });
+                    }
+                });
+                eventBlock.dataset.choices = JSON.stringify(choices);
+                summary += `<p class="text-xs text-gray-400">${choices.length} choices</p>`;
+            }
+            
+            const deleteBtn = document.createElement('div');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.innerHTML = '&times;';
+            deleteBtn.onclick = (e) => { e.stopPropagation(); timeline.removeChild(eventBlock); };
+
+            eventBlock.innerHTML = `<h4 class="font-bold text-amber-400 font-orbitron text-md">${title}</h4>${summary}`;
+            eventBlock.appendChild(deleteBtn);
+
+            timeline.appendChild(eventBlock);
+            timeline.parentElement.scrollLeft = timeline.parentElement.scrollWidth;
+        }
+
+        eventList.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') createEventForm(e.target.dataset.type);
+        });
+
+        addEventBtn.addEventListener('click', addEventToTimeline);
+
+        exportBtn.addEventListener('click', () => {
+            const mission = {
+                title: missionTitleInput.value || 'Untitled Mission',
+                comicUnlock: missionUnlockInput.value || undefined,
+                events: []
+            };
+
+            if(!mission.comicUnlock) delete mission.comicUnlock;
+
+            timeline.querySelectorAll('.event-block').forEach(el => {
+                const eventObj = { type: el.dataset.type };
+                for (const key in el.dataset) {
+                    if (key !== 'type') {
+                        let value = el.dataset[key];
+                         if (key === 'choices') {
+                            eventObj[key] = JSON.parse(value);
+                        } else if (!isNaN(value) && value.trim() !== '') {
+                            eventObj[key] = Number(value);
+                        } else if (value === 'true') eventObj[key] = true;
+                        else if (value === 'false') eventObj[key] = false;
+                        else eventObj[key] = value;
+                    }
+                }
+                mission.events.push(eventObj);
+            });
+
+            const fileContent = `window.currentLoadedMission = ${JSON.stringify(mission, null, 4)};`;
+            const blob = new Blob([fileContent], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const safeTitle = (mission.title.replace(/[^a-z0-9]/gi, '_') || 'mission') + '.js';
+            a.href = url;
+            a.download = safeTitle;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        populateEventList();
+        eventDetails.classList.add('hidden');
+        eventInstructions.classList.add('hidden');
+    });
+    </script>
+</body>
+</html>
+
