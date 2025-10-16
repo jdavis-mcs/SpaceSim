@@ -3,7 +3,13 @@
 
 Welcome to the Spaceship Bridge Simulator, an interactive, web-based game that puts you and your friends in command of a starship. This project features a fully playable bridge simulator and a powerful, user-friendly Mission Creator that allows anyone to design their own narrative-driven adventures.
 
-This project is designed to be an educational tool for middle school students (grades 5-8), teaching concepts of game design, narrative structure, and collaborative problem-solving in a fun and engaging way.
+## Play It Live!
+
+You can play the latest version of the simulator directly in your browser by visiting our official Netlify deployment:
+
+[**>> Click Here to Play the Spaceship Bridge Simulator <<**](https://www.google.com/search?q=https://your-site-name.netlify.app/ "null")
+
+_(Note: You will need to replace `your-site-name.netlify.app` with your actual Netlify URL after following the deployment guide!)_
 
 ## Key Features
 
@@ -22,7 +28,7 @@ This project is designed to be an educational tool for middle school students (g
 
 ## How to Play the Simulator
 
-1.  Open the `index.html` file in your web browser.
+1.  Open the `index.html` file in your web browser OR click the "Play It Live!" link above.
     
 2.  **Load a Mission:** Click the "Load Mission" button and select a mission file (e.g., `new_ship_diagnostics.js`) from the `missions` folder.
     
@@ -56,7 +62,7 @@ The Mission Creator allows you to design your own stories without writing any co
     
 -   **Styling:** Tailwind CSS
     
--   **AI Mission Generation:** Google's Generative AI
+-   **AI Mission Generation:** Google's Generative AI (via a secure Netlify serverless function)
     
 
-This project is fully self-contained in three HTML files and requires no backend or server to run.
+This project is fully self-contained in three HTML files and requires no backend or server to run locally, but uses Netlify Functions for secure API key management
